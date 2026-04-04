@@ -158,7 +158,8 @@ a:hover {
   transition: color var(--transition), background var(--transition);
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links a.nav-active {
   color: var(--orange);
   background: rgba(247,147,26,0.08);
 }

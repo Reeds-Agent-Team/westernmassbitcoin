@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="images/wmbn-Chrome.png">
+  <link rel="apple-touch-icon" href="images/wmbn-Chrome.png">
+  <link rel="canonical" href="https://westernmassbitcoin.com/map.html">
+  <title>Bitcoin Map — Western Mass Bitcoin Meetup</title>
+  <meta name="description" content="Find local businesses that accept Bitcoin in Western Massachusetts — Northampton, Amherst, Springfield, Holyoke, and the Pioneer Valley.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Bitcoin Map — Western Mass Bitcoin Meetup">
+  <meta property="og:description" content="Find local businesses that accept Bitcoin in Western Massachusetts.">
+  <meta property="og:url" content="https://westernmassbitcoin.com/map.html">
+  <meta property="og:image" content="https://westernmassbitcoin.com/images/wmbm-banner.png">
+  <meta property="og:site_name" content="Western Mass Bitcoin Meetup">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@MassBitcoin">
+  <style>
+    /* ── Map page ── */
+    .map-section {
+      padding: 0 0 80px;
+      background: var(--bg);
+    }
+
+    .map-wrapper {
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 600px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    @media (max-width: 768px) {
+      #map {
+        height: 420px;
+        border-radius: var(--radius);
+      }
+    }
+
+    /* Loading / error overlay */
+    #map-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(13, 13, 13, 0.88);
+      border-radius: var(--radius-lg);
+      z-index: 1000;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #map-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      #map-overlay {
+        border-radius: var(--radius);
+      }
+    }
+
+    .map-overlay-icon {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--orange);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .map-overlay-icon.error-icon {
+      animation: none;
+      border-color: #e55;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #e55;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #map-overlay p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    #map-overlay p.overlay-error {
+      color: #e55;
+    }
+
+    /* Merchant count badge */
+    .map-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    #merchant-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    #merchant-count strong {
+      color: var(--orange);
+    }
+
+    .btcmap-credit {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .btcmap-credit a {
+      color: var(--orange);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .btcmap-credit a:hover {
+      color: var(--orange-light);
+    }
+
+    /* Leaflet popup dark theme */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg3) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+      box-shadow: var(--shadow) !important;
+      color: var(--text) !important;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--bg3) !important;
+    }
+
+    .leaflet-popup-close-button {
+      color: var(--text-muted) !important;
+      font-size: 1.2rem !important;
+    }
+
+    .leaflet-popup-close-button:hover {
+      color: var(--orange) !important;
+    }
+
+    /* Popup content */
+    .popup-inner {
+      font-family: var(--font);
+      max-width: 240px;
+    }
+
+    .popup-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .popup-category {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #000;
+      background: var(--orange);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .popup-detail {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      line-height: 1.4;
+    }
+
+    .popup-detail-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .popup-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--orange);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .popup-link:hover {
+      color: var(--orange-light);
+    }
+
+    /* Custom marker */
+    .btc-marker {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER / NAV
+       ============================================================ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <div class="nav-logo">
+          <a href="index.html">
+            <img src="images/wmbm-banner.png" alt="Western Mass Bitcoin Meetup" width="1014" height="360">
+          </a>
+        </div>
+
+        <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links" id="nav-links">
+          <a href="index.html">Home</a>
+          <a href="index.html#about">About</a>
+          <a href="index.html#events">Events</a>
+          <a href="resources.html">Resources</a>
+          <a href="map.html" class="nav-active">Map</a>
+          <a href="contact.html">Subscribe</a>
+          <a href="resources.html#support" class="btn-support">Support Us</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       PAGE HERO
+       ============================================================ -->
+  <section class="page-hero">
+    <div class="container">
+      <span class="section-label">Spend Bitcoin Locally</span>
+      <h1>Bitcoin Map</h1>
+      <div class="orange-divider"></div>
+      <p style="max-width:600px; color: var(--text-muted);">Find businesses in the Pioneer Valley that accept Bitcoin. Data sourced from <a href="https://btcmap.org" target="_blank" rel="noopener" style="color:var(--orange);">BTCMap.org</a> — a community-maintained directory of Bitcoin-accepting merchants worldwide.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MAP
+       ============================================================ -->
+  <section class="map-section">
+    <div class="container">
+
+      <div class="map-wrapper">
+        <div id="map" role="application" aria-label="Map of Bitcoin-accepting merchants in Western Massachusetts"></div>
+
+        <!-- Loading / error overlay -->
+        <div id="map-overlay" role="status" aria-live="polite">
+          <div class="map-overlay-icon" id="overlay-spinner"></div>
+          <p id="overlay-message">Loading merchants…</p>
+        </div>
+      </div>
+
+      <div class="map-meta">
+        <p id="merchant-count"></p>
+        <p class="btcmap-credit">Merchant data from <a href="https://btcmap.org" target="_blank" rel="noopener">BTCMap.org</a> · Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <img src="images/wmbm-banner.png" alt="Western Mass Bitcoin Meetup" width="1014" height="360">
+          <p class="footer-tagline">The Western Mass Bitcoin Meetup is on a mission to find and connect bitcoiners in the area and has been growing quickly.</p>
+          <div class="footer-socials">
+            <a href="https://x.com/MassBitcoin" class="footer-social-link" target="_blank" rel="noopener" aria-label="Twitter/X">
+              <img src="images/IC-X-1.png" alt="Twitter/X" width="81" height="81">
+            </a>
+            <a href="https://primal.net/p/nprofile1qqszfe6qfeuz6qwsfvep4jw3yk5w9lnxduckez8vagzhy0dtdrcglgq9gy2p5" class="footer-social-link" target="_blank" rel="noopener" aria-label="Nostr">
+              <img src="images/IC-NOSTR-1.png" alt="Nostr" width="81" height="81">
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#events">Events</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="map.html">Map</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-subscribe">
+          <h4>Stay Updated</h4>
+          <p>Get notified about upcoming meetups.</p>
+          <form class="footer-form" id="footer-subscribe-form">
+            <div class="form-group">
+              <input type="text" name="name" placeholder="Name (optional)">
+            </div>
+            <div class="form-group">
+              <input type="email" name="email" placeholder="Email address" required>
+            </div>
+            <button type="submit" class="btn btn-orange">Subscribe</button>
+          </form>
+          <div class="form-success" id="footer-form-success">
+            Thanks! We'll keep you posted on upcoming meetups.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================ -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+  <script>
+    // ── Mobile nav ──────────────────────────────────────────────
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navLinks = document.getElementById('nav-links');
+
+    hamburgerBtn.addEventListener('click', function () {
+      const isOpen = navLinks.classList.toggle('open');
+      hamburgerBtn.setAttribute('aria-expanded', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // ── Footer subscribe form ───────────────────────────────────
+    document.getElementById('footer-subscribe-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const successEl = document.getElementById('footer-form-success');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+      try {
+        const data = new FormData(form);
+        const response = await fetch('https://formspree.io/f/myknlwbn', {
+          method: 'POST', body: data,
+          headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+          form.style.display = 'none';
+          successEl.classList.add('show');
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Subscribe';
+          alert('Something went wrong. Please try again.');
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe';
+        alert('Something went wrong. Please try again.');
+      }
+    });
+
+    // ── Map ──────────────────────────────────────────────────────
+
+    // Pioneer Valley bounding box
+    const BOUNDS = {
+      minLat: 42.03,
+      maxLat: 42.50,
+      minLon: -72.90,
+      maxLon: -72.40
+    };
+
+    // Center: Easthampton, MA
+    const CENTER = [42.2676, -72.6673];
+    const ZOOM   = 12;
+
+    // Init map
+    const map = L.map('map', {
+      center: CENTER,
+      zoom: ZOOM,
+      zoomControl: true,
+      scrollWheelZoom: true
+    });
+
+    // OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Custom Bitcoin-orange SVG pin icon
+    function makeBtcIcon(color) {
+      color = color || '#F7931A';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z"
+          fill="${color}" stroke="#000" stroke-width="1.5"/>
+        <text x="16" y="21" text-anchor="middle" dominant-baseline="middle"
+          font-size="14" font-weight="bold" fill="#000" font-family="Arial,sans-serif">₿</text>
+      </svg>`;
+      return L.divIcon({
+        html: svg,
+        className: 'btc-marker',
+        iconSize: [32, 42],
+        iconAnchor: [16, 42],
+        popupAnchor: [0, -44]
+      });
+    }
+
+    const defaultIcon = makeBtcIcon('#F7931A');
+
+    // Overlay helpers
+    const overlay = document.getElementById('map-overlay');
+    const overlaySpinner = document.getElementById('overlay-spinner');
+    const overlayMsg = document.getElementById('overlay-message');
+    const merchantCountEl = document.getElementById('merchant-count');
+
+    function showError(msg) {
+      overlaySpinner.className = 'map-overlay-icon error-icon';
+      overlaySpinner.textContent = '!';
+      overlayMsg.className = 'overlay-error';
+      overlayMsg.textContent = msg;
+      overlay.style.pointerEvents = 'none';
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      // Remove from DOM after fade so map is fully interactive
+      setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    }
+
+    // Extract a readable address from OSM tags
+    function buildAddress(tags) {
+      const parts = [];
+      if (tags['addr:housenumber'] && tags['addr:street']) {
+        parts.push(tags['addr:housenumber'] + ' ' + tags['addr:street']);
+      } else if (tags['addr:street']) {
+        parts.push(tags['addr:street']);
+      }
+      if (tags['addr:city']) parts.push(tags['addr:city']);
+      if (tags['addr:state']) parts.push(tags['addr:state']);
+      return parts.join(', ') || null;
+    }
+
+    // Derive a human-readable category from OSM tags
+    function getCategory(tags) {
+      const map = {
+        'amenity=restaurant': 'Restaurant',
+        'amenity=cafe': 'Café',
+        'amenity=bar': 'Bar',
+        'amenity=fast_food': 'Fast Food',
+        'amenity=pub': 'Pub',
+        'amenity=food_court': 'Food',
+        'shop=convenience': 'Shop',
+        'shop=supermarket': 'Grocery',
+        'shop=clothes': 'Clothing',
+        'shop=books': 'Books',
+        'shop=electronics': 'Electronics',
+        'shop=jewelry': 'Jewelry',
+        'shop=art': 'Art',
+        'shop=gift': 'Gift Shop',
+        'shop=yes': 'Shop',
+        'tourism=hotel': 'Hotel',
+        'tourism=hostel': 'Hostel',
+        'tourism=attraction': 'Attraction',
+        'leisure=fitness_centre': 'Gym',
+        'office=yes': 'Office',
+      };
+      for (const [key, label] of Object.entries(map)) {
+        const [k, v] = key.split('=');
+        if (tags[k] === v) return label;
+      }
+      if (tags['amenity']) return tags['amenity'].replace(/_/g, ' ');
+      if (tags['shop'])    return tags['shop'].replace(/_/g, ' ');
+      if (tags['tourism']) return tags['tourism'].replace(/_/g, ' ');
+      if (tags['leisure']) return tags['leisure'].replace(/_/g, ' ');
+      return 'Merchant';
+    }
+
+    // Build popup HTML for a merchant
+    function buildPopup(name, tags) {
+      const address  = buildAddress(tags);
+      const category = getCategory(tags);
+      const website  = tags['website'] || tags['contact:website'] || tags['url'] || null;
+      const phone    = tags['phone'] || tags['contact:phone'] || null;
+
+      let html = `<div class="popup-inner">`;
+      html += `<div class="popup-name">${escHtml(name)}</div>`;
+      html += `<span class="popup-category">${escHtml(category)}</span>`;
+      if (address) {
+        html += `<div class="popup-detail"><span class="popup-detail-icon">📍</span><span>${escHtml(address)}</span></div>`;
+      }
+      if (phone) {
+        html += `<div class="popup-detail"><span class="popup-detail-icon">📞</span><span>${escHtml(phone)}</span></div>`;
+      }
+      if (website) {
+        const safeUrl = sanitizeUrl(website);
+        if (safeUrl) {
+          html += `<a class="popup-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">Visit website →</a>`;
+        }
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function sanitizeUrl(url) {
+      try {
+        const u = new URL(url.startsWith('http') ? url : 'https://' + url);
+        if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+        return u.href;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // Get lat/lon from an element; returns null if unavailable
+    function getLatLon(el) {
+      const osm = el.osm_json;
+      if (!osm) return null;
+
+      // Node — has direct lat/lon
+      if (osm.type === 'node' && osm.lat != null && osm.lon != null) {
+        return [osm.lat, osm.lon];
+      }
+
+      // Way/relation — use bounds center if available
+      if (osm.bounds) {
+        const lat = (osm.bounds.minlat + osm.bounds.maxlat) / 2;
+        const lon = (osm.bounds.minlon + osm.bounds.maxlon) / 2;
+        return [lat, lon];
+      }
+
+      // Way — use first node coordinate if available
+      if (osm.geometry && osm.geometry.length > 0) {
+        const first = osm.geometry[0];
+        if (first.lat != null && first.lon != null) {
+          return [first.lat, first.lon];
+        }
+      }
+
+      return null;
+    }
+
+    // Fetch and plot merchants
+    async function loadMerchants() {
+      try {
+        const resp = await fetch('https://api.btcmap.org/v2/elements', {
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!resp.ok) {
+          throw new Error(`API error: ${resp.status} ${resp.statusText}`);
+        }
+
+        const elements = await resp.json();
+
+        let plotted = 0;
+        const markers = L.layerGroup();
+
+        for (const el of elements) {
+          // Skip deleted elements
+          if (el['deleted_at']) continue;
+
+          const latLon = getLatLon(el);
+          if (!latLon) continue;
+
+          const [lat, lon] = latLon;
+
+          // Filter to Pioneer Valley bounding box
+          if (lat < BOUNDS.minLat || lat > BOUNDS.maxLat ||
+              lon < BOUNDS.minLon || lon > BOUNDS.maxLon) {
+            continue;
+          }
+
+          const tags = (el.osm_json && el.osm_json.tags) || {};
+          const name = tags['name'] || tags['brand'] || 'Unnamed Merchant';
+
+          const marker = L.marker([lat, lon], { icon: defaultIcon });
+          marker.bindPopup(buildPopup(name, tags), {
+            maxWidth: 280,
+            minWidth: 160
+          });
+          markers.addLayer(marker);
+          plotted++;
+        }
+
+        markers.addTo(map);
+        hideOverlay();
+
+        if (plotted === 0) {
+          merchantCountEl.innerHTML = 'No Bitcoin merchants found in this area yet. <a href="https://btcmap.org" target="_blank" rel="noopener" style="color:var(--orange)">Add one on BTCMap →</a>';
+        } else {
+          merchantCountEl.innerHTML = `Showing <strong>${plotted}</strong> Bitcoin-accepting merchant${plotted !== 1 ? 's' : ''} in the Pioneer Valley`;
+        }
+
+      } catch (err) {
+        console.error('BTCMap fetch error:', err);
+        showError('Could not load merchant data. Please try refreshing the page.');
+        merchantCountEl.textContent = '';
+      }
+    }
+
+    loadMerchants();
+  </script>
+
+</body>
+</html>
