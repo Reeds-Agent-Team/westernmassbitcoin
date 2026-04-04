@@ -561,66 +561,40 @@
       }
     }
 
-    // Get lat/lon from an element; returns null if unavailable
-    function getLatLon(el) {
-      const osm = el.osm_json;
-      if (!osm) return null;
-
-      // Node — has direct lat/lon
-      if (osm.type === 'node' && osm.lat != null && osm.lon != null) {
-        return [osm.lat, osm.lon];
-      }
-
-      // Way/relation — use bounds center if available
-      if (osm.bounds) {
-        const lat = (osm.bounds.minlat + osm.bounds.maxlat) / 2;
-        const lon = (osm.bounds.minlon + osm.bounds.maxlon) / 2;
-        return [lat, lon];
-      }
-
-      // Way — use first node coordinate if available
-      if (osm.geometry && osm.geometry.length > 0) {
-        const first = osm.geometry[0];
-        if (first.lat != null && first.lon != null) {
-          return [first.lat, first.lon];
-        }
-      }
-
-      return null;
-    }
-
     // Fetch and plot merchants
     async function loadMerchants() {
       try {
-        const resp = await fetch('https://api.btcmap.org/v2/elements', {
-          headers: { 'Accept': 'application/json' }
-        });
+        // Use Overpass API to fetch only merchants within the Pioneer Valley bbox.
+        // Queries both payment:bitcoin=yes and currency:XBT=yes (the two common OSM tags).
+        const bbox = `${BOUNDS.minLat},${BOUNDS.minLon},${BOUNDS.maxLat},${BOUNDS.maxLon}`;
+        const query = `[out:json][timeout:30];(node["payment:bitcoin"="yes"](${bbox});way["payment:bitcoin"="yes"](${bbox});node["currency:XBT"="yes"](${bbox});way["currency:XBT"="yes"](${bbox}););out center;`;
+        const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+        const resp = await fetch(url);
 
         if (!resp.ok) {
           throw new Error(`API error: ${resp.status} ${resp.statusText}`);
         }
 
-        const elements = await resp.json();
+        const data = await resp.json();
+        const elements = data.elements || [];
 
         let plotted = 0;
         const markers = L.layerGroup();
 
         for (const el of elements) {
-          // Skip deleted elements
-          if (el['deleted_at']) continue;
-
-          const latLon = getLatLon(el);
-          if (!latLon) continue;
-
-          const [lat, lon] = latLon;
-
-          // Filter to Pioneer Valley bounding box
-          if (lat < BOUNDS.minLat || lat > BOUNDS.maxLat ||
-              lon < BOUNDS.minLon || lon > BOUNDS.maxLon) {
-            continue;
+          let lat, lon;
+          if (el.type === 'node') {
+            lat = el.lat;
+            lon = el.lon;
+          } else if (el.center) {
+            // ways return a center point when using "out center"
+            lat = el.center.lat;
+            lon = el.center.lon;
           }
+          if (lat == null || lon == null) continue;
 
-          const tags = (el.osm_json && el.osm_json.tags) || {};
+          const tags = el.tags || {};
           const name = tags['name'] || tags['brand'] || 'Unnamed Merchant';
 
           const marker = L.marker([lat, lon], { icon: defaultIcon });
