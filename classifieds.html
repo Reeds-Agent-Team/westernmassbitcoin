@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="images/wmbn-Chrome.png">
+  <link rel="apple-touch-icon" href="images/wmbn-Chrome.png">
+  <link rel="canonical" href="https://westernmassbitcoin.com/classifieds.html">
+  <title>Classifieds — Western Mass Bitcoin Meetup</title>
+  <meta name="description" content="Buy, sell, and trade among Western Mass Bitcoiners. A Nostr-powered classifieds board for our meetup community. Local pickup only — no shipping, no checkout.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Classifieds — Western Mass Bitcoin Meetup">
+  <meta property="og:description" content="Buy, sell, and trade among Western Mass Bitcoiners. A Nostr-powered classifieds board for our meetup community.">
+  <meta property="og:url" content="https://westernmassbitcoin.com/classifieds.html">
+  <meta property="og:image" content="https://westernmassbitcoin.com/images/wmbm-banner.png">
+  <meta property="og:site_name" content="Western Mass Bitcoin Meetup">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@MassBitcoin">
+  <meta name="twitter:title" content="Classifieds — Western Mass Bitcoin Meetup">
+  <meta name="twitter:description" content="Buy, sell, and trade among Western Mass Bitcoiners. A Nostr-powered classifieds board for our meetup community.">
+  <meta name="twitter:image" content="https://westernmassbitcoin.com/images/wmbm-banner.png">
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER / NAV
+       ============================================================ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <div class="nav-logo">
+          <a href="index.html">
+            <img src="images/wmbm-banner.png" alt="Western Mass Bitcoin Meetup" width="1014" height="360">
+          </a>
+        </div>
+
+        <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links" id="nav-links">
+          <a href="index.html">Home</a>
+          <a href="index.html#about">About</a>
+          <a href="index.html#events">Events</a>
+          <a href="resources.html">Resources</a>
+          <a href="map.html">Map</a>
+          <a href="classifieds.html" class="nav-active">Classifieds</a>
+          <a href="contact.html">Subscribe</a>
+          <a href="resources.html#support" class="btn-support">Support Us</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       INTRO
+       ============================================================ -->
+  <section class="section-darker classifieds-intro">
+    <div class="container">
+      <span class="section-label">Buy / Sell / Trade</span>
+      <h1>Classifieds</h1>
+      <div class="orange-divider"></div>
+      <p>A Nostr-powered marketplace for Western Mass Bitcoiners. All listings live on the Nostr network — we just show the ones from verified meetup members here. Local pickup only. No shipping, no checkout, no middleman. Deals happen in person at our meetups or wherever you arrange to meet.</p>
+
+      <div class="classifieds-toolbar">
+        <div class="classifieds-toolbar-status" id="cf-status">
+          <span id="cf-status-text">Loading listings from Nostr…</span>
+        </div>
+        <div class="classifieds-toolbar-actions" id="cf-toolbar-actions">
+          <button class="btn btn-orange" id="cf-post-btn">Post a Listing</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       LISTINGS GRID
+       ============================================================ -->
+  <section class="section-dark">
+    <div class="container">
+      <div class="classifieds-grid" id="cf-grid">
+        <div class="listing-loading">Connecting to relays…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+
+        <div class="footer-brand">
+          <img src="images/wmbm-banner.png" alt="Western Mass Bitcoin Meetup" width="1014" height="360">
+          <p class="footer-tagline">The Western Mass Bitcoin Meetup is on a mission to find and connect bitcoiners in the area and has been growing quickly.</p>
+          <div class="footer-socials">
+            <a href="https://x.com/MassBitcoin" class="footer-social-link" target="_blank" rel="noopener" aria-label="Twitter/X">
+              <img src="images/IC-X-1.png" alt="Twitter/X" width="81" height="81">
+            </a>
+            <a href="https://primal.net/p/nprofile1qqszfe6qfeuz6qwsfvep4jw3yk5w9lnxduckez8vagzhy0dtdrcglgq9gy2p5" class="footer-social-link" target="_blank" rel="noopener" aria-label="Nostr">
+              <img src="images/IC-NOSTR-1.png" alt="Nostr" width="81" height="81">
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#events">Events</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="classifieds.html">Classifieds</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-subscribe">
+          <h4>Stay Updated</h4>
+          <p>Get notified about upcoming meetups.</p>
+          <form class="footer-form" id="footer-subscribe-form">
+            <div class="form-group">
+              <input type="text" name="name" placeholder="Name (optional)">
+            </div>
+            <div class="form-group">
+              <input type="email" name="email" placeholder="Email address" required>
+            </div>
+            <button type="submit" class="btn btn-orange">Subscribe</button>
+          </form>
+          <div class="form-success" id="footer-form-success">
+            Thanks! We'll keep you posted on upcoming meetups.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       LISTING DETAIL MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="listing-modal" role="dialog" aria-modal="true" aria-labelledby="listing-modal-title">
+    <div class="modal">
+      <button class="modal-close" aria-label="Close" data-close>×</button>
+      <div id="listing-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       LOGIN MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+    <div class="modal modal-sm">
+      <button class="modal-close" aria-label="Close" data-close>×</button>
+      <div class="modal-header">
+        <h3 id="login-modal-title">Sign in with Nostr</h3>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; font-size: 0.9rem;">You need a Nostr key to post a listing. Choose how you want to sign in.</p>
+
+        <div class="login-options">
+          <button class="login-option login-option-primary" data-method="signup">
+            <span class="login-option-icon">✨</span>
+            <span class="login-option-label">
+              <strong>Sign Up</strong>
+              <span class="login-option-sub">New to Nostr? Walk through setup in a couple steps.</span>
+            </span>
+          </button>
+
+          <div class="login-divider"><span>or sign in with an existing key</span></div>
+
+          <button class="login-option" data-method="nip07" id="login-nip07">
+            <span class="login-option-icon">🔌</span>
+            <span class="login-option-label">
+              <strong>Browser extension</strong>
+              <span class="login-option-sub">Alby, nos2x, keys.band (recommended on desktop)</span>
+            </span>
+          </button>
+
+          <button class="login-option" data-method="nip46">
+            <span class="login-option-icon">📱</span>
+            <span class="login-option-label">
+              <strong>Remote signer (NIP-46)</strong>
+              <span class="login-option-sub">Amber, nsec.app, or any bunker:// URL</span>
+            </span>
+          </button>
+
+          <button class="login-option" data-method="nsec">
+            <span class="login-option-icon">🔑</span>
+            <span class="login-option-label">
+              <strong>Paste nsec</strong>
+              <span class="login-option-sub">Direct entry — kept in memory only, never saved</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="login-panel" id="login-panel-nip46">
+          <p class="login-panel-warning">Paste a <code>bunker://</code> URL from your signer (Amber, nsec.app, Primal, etc).</p>
+          <input type="text" id="login-bunker-input" placeholder="bunker://...">
+          <div class="login-panel-actions">
+            <button class="btn btn-ghost" data-cancel="nip46">Cancel</button>
+            <button class="btn btn-orange" id="login-bunker-connect">Connect</button>
+          </div>
+          <div class="login-panel-status" id="login-bunker-status"></div>
+        </div>
+
+        <div class="login-panel" id="login-panel-nsec">
+          <p class="login-panel-warning"><strong>Security note:</strong> your nsec gives full control of your account. Only paste it on sites you trust. We keep it in memory only — it's gone when you close this tab.</p>
+          <input type="password" id="login-nsec-input" placeholder="nsec1...">
+          <div class="login-panel-actions">
+            <button class="btn btn-ghost" data-cancel="nsec">Cancel</button>
+            <button class="btn btn-orange" id="login-nsec-submit">Sign in</button>
+          </div>
+          <div class="login-panel-status" id="login-nsec-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SIGN UP / ONBOARDING MODAL (stub — flow TBD)
+       ============================================================ -->
+  <div class="modal-overlay" id="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title">
+    <div class="modal modal-sm">
+      <button class="modal-close" aria-label="Close" data-close>×</button>
+      <div class="modal-header">
+        <h3 id="signup-modal-title">Sign up</h3>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">Welcome 👋 — we're still designing this flow. Tell Reed what you'd like to see here.</p>
+        <p style="font-size: 0.85rem; color: var(--text-dim);">In the meantime, you can create a Nostr key at <a href="https://nstart.me" target="_blank" rel="noopener" style="color: var(--orange);">nstart.me</a> or <a href="https://nsec.app" target="_blank" rel="noopener" style="color: var(--orange);">nsec.app</a>, then come back and use one of the sign-in options.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       COMPOSER MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="composer-modal" role="dialog" aria-modal="true" aria-labelledby="composer-modal-title">
+    <div class="modal">
+      <button class="modal-close" aria-label="Close" data-close>×</button>
+      <div class="modal-header">
+        <h3 id="composer-modal-title">Post a Listing</h3>
+      </div>
+      <div class="modal-body">
+        <form id="composer-form">
+
+          <div class="composer-field">
+            <label for="composer-title">Title</label>
+            <input type="text" id="composer-title" name="title" maxlength="140" required placeholder="e.g. ColdCard Mk4, lightly used">
+          </div>
+
+          <div class="composer-field">
+            <label for="composer-summary">Summary (optional)</label>
+            <input type="text" id="composer-summary" name="summary" maxlength="200" placeholder="One-line teaser shown under the title">
+          </div>
+
+          <div class="composer-field">
+            <label>Images <span class="composer-hint">(up to 4, uploaded to Blossom)</span></label>
+            <div class="composer-images" id="composer-images">
+              <button type="button" class="composer-image-add" id="composer-image-add">
+                <span class="composer-image-add-icon">+</span>
+                <span>Add image</span>
+              </button>
+            </div>
+            <input type="file" id="composer-file-input" accept="image/*" multiple style="display:none">
+          </div>
+
+          <div class="composer-field composer-price-row">
+            <div>
+              <label for="composer-price-amount">Price</label>
+              <input type="text" id="composer-price-amount" name="price" placeholder="e.g. 21000 or 50">
+            </div>
+            <div>
+              <label for="composer-price-currency">Currency</label>
+              <select id="composer-price-currency" name="currency">
+                <option value="SATS">SATS</option>
+                <option value="USD">USD</option>
+                <option value="BTC">BTC</option>
+                <option value="trade">Trade / Make Offer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="composer-field">
+            <label for="composer-description">Description</label>
+            <textarea id="composer-description" name="description" required placeholder="Tell buyers about the item — condition, history, what's included, etc."></textarea>
+            <p class="composer-hint">Anything you type here is public on Nostr forever. Don't include private info.</p>
+          </div>
+
+          <div class="composer-field">
+            <label for="composer-tags">Tags (optional, comma-separated)</label>
+            <input type="text" id="composer-tags" name="tags" placeholder="e.g. hardware, wallet, used">
+          </div>
+
+          <div class="composer-quiet">
+            <label class="composer-toggle">
+              <input type="checkbox" id="composer-quiet">
+              <span>Publish quietly</span>
+            </label>
+            <span class="help-tip" tabindex="0" role="button" aria-label="What does Publish Quietly mean?">
+              <span class="help-tip-icon">?</span>
+              <span class="help-tip-text">
+                <strong>Publish Quietly</strong> sends your listing <em>only</em> to <code>relay.mynostr.app</code>, a relay controlled by the Western Mass Bitcoin Meetup.
+                <br><br>
+                It's still public — anyone who knows the relay can read it — but it won't propagate to the broader Nostr network, so it's less likely to appear in other feeds, search engines, or crawlers. Good for local-first listings.
+              </span>
+            </span>
+          </div>
+
+          <div class="composer-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button type="submit" class="btn btn-orange" id="composer-submit">Publish to Nostr</button>
+          </div>
+
+          <div class="composer-status" id="composer-status"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================ -->
+  <script>
+    // Mobile nav toggle
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navLinks = document.getElementById('nav-links');
+    hamburgerBtn.addEventListener('click', function() {
+      const isOpen = navLinks.classList.toggle('open');
+      hamburgerBtn.setAttribute('aria-expanded', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        hamburgerBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // Footer subscribe form — Formspree fetch
+    document.getElementById('footer-subscribe-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const successEl = document.getElementById('footer-form-success');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+      try {
+        const data = new FormData(form);
+        const response = await fetch('https://formspree.io/f/myknlwbn', {
+          method: 'POST',
+          body: data,
+          headers: { 'Accept': 'application/json' }
+        });
+        if (response.ok) {
+          form.style.display = 'none';
+          successEl.classList.add('show');
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Subscribe';
+          alert('Something went wrong. Please try again.');
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe';
+        alert('Something went wrong. Please try again.');
+      }
+    });
+
+    // Modal helpers
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(el) {
+      el.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay || e.target.matches('[data-close]')) {
+          closeModal(overlay);
+        }
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.open').forEach(closeModal);
+      }
+    });
+    window.cfOpenModal = openModal;
+    window.cfCloseModal = (id) => closeModal(document.getElementById(id));
+  </script>
+
+  <script type="module" src="js/classifieds.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "relays": [
+    "wss://relay.damus.io",
+    "wss://nos.lol",
+    "wss://relay.primal.net",
+    "wss://relay.nostr.band",
+    "wss://relay.plebeian.market",
+    "wss://relay.mynostr.app"
+  ],
+  "quietRelay": "wss://relay.mynostr.app",
+  "blossom": {
+    "server": "https://blossom.primal.net"
+  },
+  "whitelistedNpubs": [
+    "npub1xgyjasdztryl9sg6nfdm2wcj0j3qjs03sq7a0an32pg0lr5l6yaqxhgu7s"
+  ]
+}
