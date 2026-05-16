@@ -947,6 +947,14 @@ function renderUserChip() {
 
   const chip = document.createElement('span');
   chip.className = 'classifieds-user-chip';
+
+  // Avatar + name doubles as a button — opens the account menu (copy npub,
+  // QR code, advanced "copy nsec").
+  const identityBtn = document.createElement('button');
+  identityBtn.type = 'button';
+  identityBtn.className = 'classifieds-user-chip-identity';
+  identityBtn.setAttribute('aria-label', 'Account menu');
+  identityBtn.setAttribute('aria-haspopup', 'menu');
   const img = document.createElement('img');
   img.src = profiles.get(activeSigner.pubkey)?.picture || transparentPx();
   img.alt = '';
@@ -954,11 +962,23 @@ function renderUserChip() {
   name.textContent = profiles.get(activeSigner.pubkey)?.display_name
     || profiles.get(activeSigner.pubkey)?.name
     || shortNpub(activeSigner.pubkey);
+  identityBtn.appendChild(img);
+  identityBtn.appendChild(name);
+  identityBtn.addEventListener('click', (e) => {
+    // stopPropagation so the document click-outside handler doesn't fire on
+    // the same click and immediately close what we just opened.
+    e.stopPropagation();
+    if (accountMenuEl) closeAccountMenu();
+    else openAccountMenu(identityBtn);
+  });
+
   const out = document.createElement('button');
+  out.type = 'button';
+  out.className = 'classifieds-user-chip-signout';
   out.textContent = 'sign out';
   out.addEventListener('click', logout);
-  chip.appendChild(img);
-  chip.appendChild(name);
+
+  chip.appendChild(identityBtn);
   chip.appendChild(out);
 
   const postBtn = document.createElement('button');
@@ -983,6 +1003,7 @@ function renderUserChip() {
 }
 
 function logout() {
+  closeAccountMenu();
   try { activeSigner?.close?.(); } catch {}
   activeSigner = null;
   clearSavedSession();
@@ -1008,6 +1029,202 @@ function logout() {
   postBtn.textContent = 'Post a Listing';
   postBtn.addEventListener('click', () => openLogin());
   actions.appendChild(postBtn);
+}
+
+// ============================================================
+// Account menu (Copy npub / Show QR / Advanced → Copy nsec)
+// ============================================================
+let accountMenuEl = null;
+let qrLibPromise = null;
+
+function loadQrLib() {
+  if (!qrLibPromise) {
+    // Lazy-load — pulled in only when the user clicks "Show QR code".
+    qrLibPromise = import('https://esm.sh/qrcode@1.5.3').then(m => m.default || m);
+  }
+  return qrLibPromise;
+}
+
+function closeAccountMenu() {
+  if (accountMenuEl) {
+    accountMenuEl.remove();
+    accountMenuEl = null;
+  }
+  document.removeEventListener('click', accountMenuClickOutside);
+}
+
+function accountMenuClickOutside(e) {
+  if (!accountMenuEl) return;
+  if (accountMenuEl.contains(e.target)) return;
+  closeAccountMenu();
+}
+
+function openAccountMenu(anchorEl) {
+  closeAccountMenu();
+  if (!activeSigner) return;
+
+  const npub = nip19.npubEncode(activeSigner.pubkey);
+  const npubShort = `${npub.slice(0, 14)}…${npub.slice(-6)}`;
+
+  const menu = document.createElement('div');
+  menu.className = 'account-menu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = `
+    <div class="account-menu-npub" title="${npub}">${npubShort}</div>
+    <button type="button" class="account-menu-item" data-action="copy-npub">Copy npub</button>
+    <button type="button" class="account-menu-item" data-action="show-qr">Show QR code</button>
+    <button type="button" class="account-menu-toggle" data-action="toggle-advanced" aria-expanded="false">
+      <span>Advanced</span>
+      <span class="account-menu-toggle-caret" data-caret>▾</span>
+    </button>
+    <div class="account-menu-advanced" data-advanced hidden>
+      <button type="button" class="account-menu-item account-menu-item-danger" data-action="copy-nsec">Copy private key</button>
+      <div class="account-menu-note" data-nsec-note hidden></div>
+    </div>
+  `;
+  document.body.appendChild(menu);
+  accountMenuEl = menu;
+
+  // Position below the anchor, clamped to the viewport.
+  const rect = anchorEl.getBoundingClientRect();
+  menu.style.top = `${rect.bottom + 6}px`;
+  menu.style.left = `${rect.left}px`;
+  const menuRect = menu.getBoundingClientRect();
+  if (menuRect.right > window.innerWidth - 8) {
+    menu.style.left = `${Math.max(8, window.innerWidth - menuRect.width - 8)}px`;
+  }
+
+  menu.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    e.stopPropagation();
+    const action = btn.dataset.action;
+
+    if (action === 'copy-npub') {
+      const ok = await copyToClipboard(npub);
+      flashMenuItem(btn, ok ? 'Copied!' : 'Copy failed');
+    } else if (action === 'show-qr') {
+      closeAccountMenu();
+      openNpubQrModal(npub);
+    } else if (action === 'toggle-advanced') {
+      const adv = menu.querySelector('[data-advanced]');
+      const caret = menu.querySelector('[data-caret]');
+      const isOpen = !adv.hasAttribute('hidden');
+      if (isOpen) {
+        adv.setAttribute('hidden', '');
+        caret.textContent = '▾';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        adv.removeAttribute('hidden');
+        caret.textContent = '▴';
+        btn.setAttribute('aria-expanded', 'true');
+        renderNsecAvailability(menu);
+      }
+    } else if (action === 'copy-nsec') {
+      await handleCopyNsec(btn);
+    }
+  });
+
+  // Defer to next tick so the click that opened the menu doesn't reach
+  // the document handler and close it immediately.
+  setTimeout(() => {
+    document.addEventListener('click', accountMenuClickOutside);
+  }, 0);
+}
+
+function renderNsecAvailability(menu) {
+  const copyBtn = menu.querySelector('[data-action="copy-nsec"]');
+  const note = menu.querySelector('[data-nsec-note]');
+  if (activeSigner?.kind === 'nsec') {
+    copyBtn.disabled = false;
+    note.hidden = true;
+    note.textContent = '';
+  } else {
+    copyBtn.disabled = true;
+    note.hidden = false;
+    note.textContent = activeSigner?.kind === 'nip07'
+      ? "Your private key lives in your browser extension, not on this site."
+      : "Your private key lives in your remote signer app, not on this site.";
+  }
+}
+
+async function handleCopyNsec(btn) {
+  const session = loadSavedSession();
+  if (!session || session.kind !== 'nsec' || !session.nsec) {
+    flashMenuItem(btn, 'No key available');
+    return;
+  }
+  const ok = confirm(
+    "Copy your private key (nsec) to the clipboard?\n\n" +
+    "Anyone with this key has FULL control of your Nostr account — they can post, message, and impersonate you. " +
+    "Only copy it if you're moving it somewhere safe. Don't paste it into untrusted apps or share it with anyone."
+  );
+  if (!ok) return;
+  const copied = await copyToClipboard(session.nsec);
+  flashMenuItem(btn, copied ? 'Copied — keep it secret!' : 'Copy failed');
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for older/insecure-context browsers
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function flashMenuItem(btn, message) {
+  if (btn.dataset.flashing === '1') return;
+  btn.dataset.flashing = '1';
+  const original = btn.textContent;
+  btn.textContent = message;
+  btn.classList.add('account-menu-item-flash');
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.classList.remove('account-menu-item-flash');
+    delete btn.dataset.flashing;
+  }, 1400);
+}
+
+async function openNpubQrModal(npub) {
+  const img = document.getElementById('qr-modal-img');
+  const npubEl = document.getElementById('qr-modal-npub');
+  const status = document.getElementById('qr-modal-status');
+  img.removeAttribute('src');
+  npubEl.textContent = npub;
+  status.textContent = 'Generating QR…';
+  cfOpenModal('qr-modal');
+  try {
+    const QRCode = await loadQrLib();
+    // Encode as a NIP-21 nostr: URI so Primal and other Nostr-aware
+    // scanners open the profile directly. Bare npubs also work as a
+    // fallback for clients that strip the prefix.
+    const dataUrl = await QRCode.toDataURL(`nostr:${npub}`, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      scale: 8,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+    img.src = dataUrl;
+    status.textContent = '';
+  } catch (err) {
+    console.error('[qr] failed to generate', err);
+    status.textContent = 'Failed to generate QR.';
+  }
 }
 
 // ============================================================

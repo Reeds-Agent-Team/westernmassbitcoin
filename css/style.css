@@ -1355,14 +1355,28 @@ a:hover {
   font-size: 0.85rem;
 }
 
-.classifieds-user-chip img {
+.classifieds-user-chip-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.classifieds-user-chip-identity:hover {
+  color: var(--orange);
+}
+.classifieds-user-chip-identity img {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.classifieds-user-chip button {
+.classifieds-user-chip-signout {
   background: none;
   border: none;
   color: var(--text-dim);
@@ -1370,9 +1384,125 @@ a:hover {
   cursor: pointer;
   padding: 0 0 0 4px;
 }
-
-.classifieds-user-chip button:hover {
+.classifieds-user-chip-signout:hover {
   color: var(--orange);
+}
+
+/* Dropdown menu shown when clicking the user chip identity. Positioned
+   in JS (fixed coordinates relative to the chip). */
+.account-menu {
+  position: fixed;
+  z-index: 2600;
+  min-width: 240px;
+  padding: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.account-menu-npub {
+  padding: 8px 10px 10px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-menu-item,
+.account-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 10px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.account-menu-item:hover,
+.account-menu-toggle:hover {
+  background: var(--bg3);
+}
+.account-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.account-menu-item:disabled:hover {
+  background: none;
+}
+.account-menu-item-danger {
+  color: #ff7676;
+}
+.account-menu-item-flash {
+  background: var(--orange) !important;
+  color: #000 !important;
+}
+.account-menu-toggle-caret {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.account-menu-advanced {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.account-menu-advanced[hidden] { display: none; }
+.account-menu-note {
+  padding: 4px 10px 8px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* QR modal */
+.qr-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.qr-modal-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+}
+.qr-modal-img-wrap {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  min-width: 244px;
+  min-height: 244px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-modal-img-wrap img {
+  display: block;
+  width: 220px;
+  height: 220px;
+}
+.qr-modal-status {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  min-height: 1.2em;
+}
+.qr-modal-npub {
+  font-size: 0.7rem;
+  font-family: monospace;
+  word-break: break-all;
+  text-align: center;
+  color: var(--text-dim);
+  max-width: 100%;
 }
 
 .classifieds-grid {
@@ -2676,6 +2806,13 @@ a:hover {
   line-height: 1;
 }
 .dm-fab-badge[hidden] { display: none; }
+
+/* Hide the FAB whenever a classifieds modal is open — otherwise it floats
+   on top of the modal and (on mobile especially) blocks the Message Seller
+   button that lives in the same bottom-left area. */
+body:has(.modal-overlay.open) .dm-fab {
+  display: none !important;
+}
 
 @media (max-width: 640px) {
   .dm-fab {

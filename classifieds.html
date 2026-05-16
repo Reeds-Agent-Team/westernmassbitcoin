@@ -456,6 +456,26 @@
   </div>
 
   <!-- ============================================================
+       QR CODE MODAL (npub QR for sharing/scanning)
+       ============================================================ -->
+  <div class="modal-overlay" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+    <div class="modal modal-sm">
+      <button class="modal-close" aria-label="Close" data-close>×</button>
+      <div class="modal-header">
+        <h3 id="qr-modal-title">Your npub</h3>
+      </div>
+      <div class="modal-body qr-modal-body">
+        <p class="qr-modal-hint">Scan with Primal (or any Nostr client) to open your profile.</p>
+        <div class="qr-modal-img-wrap">
+          <img id="qr-modal-img" alt="">
+        </div>
+        <div class="qr-modal-status" id="qr-modal-status"></div>
+        <code class="qr-modal-npub" id="qr-modal-npub"></code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
        JAVASCRIPT
        ============================================================ -->
   <script>

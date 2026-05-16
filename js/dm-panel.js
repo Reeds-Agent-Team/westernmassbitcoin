@@ -33,6 +33,7 @@ let panelIsOpen = false;
 let unseenWrapBuffer = [];      // wraps that arrived before activation completed
 let pendingOpenPeer = null;     // openDmThreadWith() called before activation — dispatched on activate
 let pendingOpenPanel = false;   // openDmPanel() called before activation — same
+let justOpenedPanel = false;    // suppresses the document click-outside handler for the very click that opened the panel (otherwise Message Seller opens and immediately closes it)
 
 // DOM refs
 let elPanel, elFab, elFabBadge, elBody, elOnboardingSlot, elListWrap, elThreadWrap, elTabs;
@@ -117,6 +118,7 @@ export function mountDmPanelDOM() {
   // Click-outside closes panel
   document.addEventListener('click', (e) => {
     if (!panelIsOpen) return;
+    if (justOpenedPanel) return;
     if (elPanel.contains(e.target)) return;
     if (elFab.contains(e.target)) return;
     closePanel();
@@ -243,6 +245,8 @@ function openPanel() {
   panelIsOpen = true;
   elPanel.classList.add('open');
   elFab.style.display = 'none';  // Panel covers where the FAB sits; hide to avoid overlap
+  justOpenedPanel = true;
+  setTimeout(() => { justOpenedPanel = false; }, 0);
   clearTitleFlash();
   // If we were on a thread, mark messages there as read
   if (openPeer) markThreadRead(openPeer);
